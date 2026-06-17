@@ -209,14 +209,14 @@ namespace VersionManager
             Console.WriteLine("  3. Restore a Version");
             Console.WriteLine("     Usage: Version.exe restore [ProjectName]");
             Console.WriteLine("     Description:");
-            Console.WriteLine("       - Displays archived versions available for restoration.");
+            Console.WriteLine("       - Displays versions available for restoration.");
             Console.WriteLine("       - Prompts the user to enter the number (index) of the version");
             Console.WriteLine("         they wish to restore.");
-            Console.WriteLine("       - Deletes the current .git folder in the active project directory.");
-            Console.WriteLine("       - Extracts the selected version's archived .git directory.");
+            Console.WriteLine("       - Restores from a git archive (-archive-git) when available.");
+            Console.WriteLine("       - Otherwise restores from the local Git history in the project.");
             Console.WriteLine("       - Performs a hard reset and clean to discard all uncommitted");
             Console.WriteLine("         modifications and restore files to the exact state they were in.");
-            Console.WriteLine("       - Only versions archived with -archive-git can be restored.");
+            Console.WriteLine("       - Project archives (-archive-project) cannot be restored with this command.");
             Console.WriteLine();
             Console.WriteLine("  4. Create a Snapshot (Full Backup)");
             Console.WriteLine("     Usage: Version.exe snapshot [ProjectName]");

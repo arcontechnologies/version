@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 
 namespace VersionManager
 {
@@ -54,6 +56,33 @@ namespace VersionManager
         public static void ResetHard(string projectPath)
         {
             RunGitCommand(projectPath, "reset --hard");
+        }
+
+        public static void ResetHard(string projectPath, string commitHash)
+        {
+            RunGitCommand(projectPath, $"reset --hard {commitHash}");
+        }
+
+        public static string GetHeadCommitHash(string projectPath)
+        {
+            var result = RunGitCommand(projectPath, "rev-parse HEAD");
+            if (result.ExitCode != 0)
+                return string.Empty;
+
+            return result.StandardOutput.Trim();
+        }
+
+        public static List<string> GetCommitHashesOldestFirst(string projectPath)
+        {
+            var result = RunGitCommand(projectPath, "log --reverse --format=%H");
+            if (result.ExitCode != 0)
+                return new List<string>();
+
+            return result.StandardOutput
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(hash => hash.Trim())
+                .Where(hash => !string.IsNullOrEmpty(hash))
+                .ToList();
         }
 
         public static void CleanFd(string projectPath)

@@ -17,11 +17,12 @@ namespace VersionManager
             public int Sequence;
             public DateTime Date;
             public string Comment;
+            public string CommitHash;
             public ArchiveMode ArchiveMode;
             public string ArchivePath;
         }
 
-        public static void AppendEntry(string storagePath, string projectName, string versionSeq, DateTime date, string comment, ArchiveMode archiveMode)
+        public static void AppendEntry(string storagePath, string projectName, string versionSeq, DateTime date, string comment, string commitHash, ArchiveMode archiveMode)
         {
             string historyFilePath = Path.Combine(storagePath, "History.txt");
             StringBuilder sb = new StringBuilder();
@@ -37,6 +38,11 @@ namespace VersionManager
             sb.AppendLine(date.ToString(DateTimeFormat));
             sb.AppendLine("Comment");
             sb.AppendLine(comment);
+            if (!string.IsNullOrEmpty(commitHash))
+            {
+                sb.AppendLine("Commit");
+                sb.AppendLine(commitHash);
+            }
             if (archiveMode != ArchiveMode.None)
             {
                 sb.AppendLine("Archive");
@@ -73,6 +79,7 @@ namespace VersionManager
 
                 DateTime date = DateTime.MinValue;
                 string comment = string.Empty;
+                string commitHash = string.Empty;
                 ArchiveMode archiveMode = ArchiveMode.None;
 
                 i++;
@@ -92,6 +99,14 @@ namespace VersionManager
                 }
 
                 i++;
+                if (i < lines.Length && lines[i].Equals("Commit", StringComparison.Ordinal))
+                {
+                    i++;
+                    if (i < lines.Length)
+                        commitHash = lines[i];
+                }
+
+                i++;
                 if (i < lines.Length && lines[i].Equals("Archive", StringComparison.Ordinal))
                 {
                     i++;
@@ -105,6 +120,7 @@ namespace VersionManager
                     Sequence = sequence,
                     Date = date,
                     Comment = comment,
+                    CommitHash = commitHash,
                     ArchiveMode = archiveMode,
                     ArchivePath = archivePath
                 });

@@ -53,13 +53,14 @@ namespace VersionManager
             {
                 GitManager.StageAll(projectPath);
                 GitManager.Commit(projectPath, comment);
+                string commitHash = GitManager.GetHeadCommitHash(projectPath);
 
                 ProjectManager.EnsureStorageExists(projectName);
                 string storagePath = ProjectManager.GetStoragePath(projectName);
                 string seq = HistoryManager.GetNextVersionSequence(storagePath);
                 DateTime versionDate = DateTime.Now;
 
-                HistoryManager.AppendEntry(storagePath, projectName, seq, versionDate, comment, archiveMode);
+                HistoryManager.AppendEntry(storagePath, projectName, seq, versionDate, comment, commitHash, archiveMode);
 
                 if (archiveMode == ArchiveMode.Git)
                 {

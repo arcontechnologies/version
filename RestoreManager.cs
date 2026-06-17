@@ -51,17 +51,12 @@ namespace VersionManager
 
             string storagePath = ProjectManager.GetStoragePath(projectName);
             var versions = GetAvailableVersions(storagePath);
-            var restorableVersions = new Dictionary<int, HistoryManager.VersionEntry>();
-            foreach (var entry in versions)
-            {
-                if (!string.IsNullOrEmpty(entry.ArchivePath) && entry.ArchiveMode == ArchiveMode.Git)
-                    restorableVersions[entry.Sequence] = entry;
-            }
+            var restorableVersions = BuildRestorableVersions(projectPath, versions);
 
             if (restorableVersions.Count == 0)
             {
-                Logger.LogOperation(projectName, "Restore failed", "no git-archived versions available");
-                Console.WriteLine("No git-archived versions available for restoration.");
+                Logger.LogOperation(projectName, "Restore failed", "no versions available for restoration");
+                Console.WriteLine("No versions available for restoration.");
                 return;
             }
 
@@ -84,27 +79,93 @@ namespace VersionManager
             ConsoleUI.PrintStep("Restoring version...");
             try
             {
-                string gitPath = Path.Combine(projectPath, ".git");
-                if (Directory.Exists(gitPath))
+                if (CanRestoreFromArchive(selectedVersion))
                 {
-                    DeleteDirectory(gitPath);
+                    RestoreFromArchive(projectPath, selectedVersion);
+                    Logger.LogOperation(projectName, $"Version {versionIndex:D3} restored from archive", selectedVersion.ArchivePath);
                 }
-
-                ArchiveManager.ExtractArchive(selectedVersion.ArchivePath, projectPath);
-
-                GitManager.ResetHard(projectPath);
-                GitManager.CleanFd(projectPath);
+                else if (!string.IsNullOrEmpty(selectedVersion.CommitHash))
+                {
+                    RestoreFromCommit(projectPath, selectedVersion.CommitHash);
+                    Logger.LogOperation(projectName, $"Version {versionIndex:D3} restored from git", selectedVersion.CommitHash);
+                }
+                else
+                {
+                    Logger.LogOperation(projectName, "Restore failed", $"version {versionIndex:D3} could not be resolved");
+                    Console.WriteLine("Unable to restore project.");
+                    return;
+                }
 
                 ConsoleUI.PrintStepResult("Success");
                 Console.WriteLine();
                 Console.WriteLine("Project restored.");
-                Logger.LogOperation(projectName, $"Version {versionIndex:D3} restored", selectedVersion.ArchivePath);
             }
             catch (Exception ex)
             {
                 Logger.LogError($"Project '{projectName}' - Failed to restore version {versionIndex}", ex);
                 Console.WriteLine("Unable to restore project.");
             }
+        }
+
+        private static Dictionary<int, HistoryManager.VersionEntry> BuildRestorableVersions(
+            string projectPath,
+            List<HistoryManager.VersionEntry> versions)
+        {
+            var restorableVersions = new Dictionary<int, HistoryManager.VersionEntry>();
+            List<string> commitHashes = GitManager.IsGitRepository(projectPath)
+                ? GitManager.GetCommitHashesOldestFirst(projectPath)
+                : new List<string>();
+
+            foreach (var entry in versions)
+            {
+                if (entry.ArchiveMode == ArchiveMode.Project)
+                    continue;
+
+                if (CanRestoreFromArchive(entry))
+                {
+                    restorableVersions[entry.Sequence] = entry;
+                    continue;
+                }
+
+                var resolved = entry;
+                if (string.IsNullOrEmpty(resolved.CommitHash) &&
+                    resolved.ArchiveMode == ArchiveMode.None &&
+                    resolved.Sequence > 0 &&
+                    resolved.Sequence <= commitHashes.Count)
+                {
+                    resolved.CommitHash = commitHashes[resolved.Sequence - 1];
+                }
+
+                if (!string.IsNullOrEmpty(resolved.CommitHash))
+                    restorableVersions[resolved.Sequence] = resolved;
+            }
+
+            return restorableVersions;
+        }
+
+        private static bool CanRestoreFromArchive(HistoryManager.VersionEntry entry)
+        {
+            return !string.IsNullOrEmpty(entry.ArchivePath) && entry.ArchiveMode == ArchiveMode.Git;
+        }
+
+        private static void RestoreFromArchive(string projectPath, HistoryManager.VersionEntry version)
+        {
+            string gitPath = Path.Combine(projectPath, ".git");
+            if (Directory.Exists(gitPath))
+                DeleteDirectory(gitPath);
+
+            ArchiveManager.ExtractArchive(version.ArchivePath, projectPath);
+            GitManager.ResetHard(projectPath);
+            GitManager.CleanFd(projectPath);
+        }
+
+        private static void RestoreFromCommit(string projectPath, string commitHash)
+        {
+            if (!GitManager.IsGitRepository(projectPath))
+                throw new InvalidOperationException("Git repository not found in project folder.");
+
+            GitManager.ResetHard(projectPath, commitHash);
+            GitManager.CleanFd(projectPath);
         }
 
         private static void PrintVersionListHeader(string projectName)
@@ -132,6 +193,8 @@ namespace VersionManager
                 return "[project]";
             if (!string.IsNullOrEmpty(entry.ArchivePath))
                 return "[git]";
+            if (!string.IsNullOrEmpty(entry.CommitHash))
+                return "[local]";
             return "[none]";
         }
 
