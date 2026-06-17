@@ -174,6 +174,7 @@ namespace VersionManager
             Console.WriteLine("    - ProjectsRoot    : Semicolon-separated root directories containing user projects.");
             Console.WriteLine("    - SourcesRoot     : Semicolon-separated root directories where version archives are stored.");
             Console.WriteLine("    - ArchivePassword : Password used to encrypt/decrypt ZIP archives.");
+            Console.WriteLine("    - LogFilePath     : Path to the application log file.");
             Console.WriteLine();
             Console.WriteLine("COMMANDS:");
             Console.WriteLine();

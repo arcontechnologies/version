@@ -90,11 +90,7 @@ namespace VersionManager
 
                 if (process.ExitCode != 0)
                 {
-                    Logger.LogError($"Git command 'git {arguments}' in '{workingDirectory}' failed with exit code {process.ExitCode}. Error: {error}");
-                }
-                else
-                {
-                    Logger.LogInfo($"Git command 'git {arguments}' executed successfully.");
+                    Logger.LogError($"Git command failed in '{workingDirectory}': git {GetLogSafeArguments(arguments)}. Error: {error}");
                 }
 
                 return new ProcessResult
@@ -104,6 +100,14 @@ namespace VersionManager
                     StandardError = error
                 };
             }
+        }
+
+        private static string GetLogSafeArguments(string arguments)
+        {
+            if (arguments.IndexOf("user.email", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "config --local user.email [redacted]";
+
+            return Logger.Sanitize(arguments);
         }
     }
 }

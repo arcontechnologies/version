@@ -9,6 +9,7 @@ namespace VersionManager
         public static string[] ProjectsRoots { get; private set; }
         public static string[] SourcesRoots { get; private set; }
         public static string ArchivePassword { get; private set; }
+        public static string LogFilePath { get; private set; }
 
         static ConfigurationManager()
         {
@@ -17,12 +18,14 @@ namespace VersionManager
                 ProjectsRoots = ParsePaths(System.Configuration.ConfigurationManager.AppSettings["ProjectsRoot"]);
                 SourcesRoots = ParsePaths(System.Configuration.ConfigurationManager.AppSettings["SourcesRoot"]);
                 ArchivePassword = System.Configuration.ConfigurationManager.AppSettings["ArchivePassword"];
+                LogFilePath = EnvironmentManager.Expand(System.Configuration.ConfigurationManager.AppSettings["LogFilePath"]);
             }
             catch (Exception)
             {
                 ProjectsRoots = new string[0];
                 SourcesRoots = new string[0];
                 ArchivePassword = string.Empty;
+                LogFilePath = string.Empty;
             }
         }
 

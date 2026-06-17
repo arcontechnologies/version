@@ -14,6 +14,7 @@ namespace VersionManager
             string projectPath = ProjectManager.GetProjectPath(projectName);
             if (!ProjectManager.ProjectExists(projectName))
             {
+                Logger.LogOperation(projectName, "Version failed", "project not found");
                 ConsoleUI.PrintErrorProjectMissing(projectName, ProjectManager.GetExpectedProjectLocations(projectName));
                 return;
             }
@@ -35,6 +36,7 @@ namespace VersionManager
 
             if (!GitManager.HasChanges(projectPath))
             {
+                Logger.LogOperation(projectName, "Version skipped", "no changes detected");
                 ConsoleUI.PrintErrorNoChanges();
                 return;
             }
@@ -66,6 +68,7 @@ namespace VersionManager
                     ArchiveManager.CreateVersionArchive(projectPath, zipFilePath);
                     ConsoleUI.PrintStepResult("Success");
                     ConsoleUI.PrintSuccess(zipFileName);
+                    Logger.LogOperation(projectName, $"Version {seq} committed and archived (git)", zipFileName);
                 }
                 else if (archiveMode == ArchiveMode.Project)
                 {
@@ -74,16 +77,18 @@ namespace VersionManager
                     ArchiveManager.CreateSnapshotArchive(projectPath, zipFilePath);
                     ConsoleUI.PrintStepResult("Success");
                     ConsoleUI.PrintSuccess(zipFileName);
+                    Logger.LogOperation(projectName, $"Version {seq} committed and archived (project)", zipFileName);
                 }
                 else
                 {
                     ConsoleUI.PrintStepResult("Success");
                     ConsoleUI.PrintSuccessCommit(seq);
+                    Logger.LogOperation(projectName, $"Version {seq} committed", "no archive");
                 }
             }
             catch (Exception ex)
             {
-                Logger.LogError("Failed to create version", ex);
+                Logger.LogError($"Project '{projectName}' - Failed to create version", ex);
                 ConsoleUI.PrintErrorArchiveFailed();
             }
         }
@@ -97,6 +102,7 @@ namespace VersionManager
             string projectPath = ProjectManager.GetProjectPath(projectName);
             if (!ProjectManager.ProjectExists(projectName))
             {
+                Logger.LogOperation(projectName, "Version failed", "project not found");
                 ConsoleUI.PrintErrorProjectMissing(projectName, ProjectManager.GetExpectedProjectLocations(projectName));
                 return;
             }
@@ -116,10 +122,11 @@ namespace VersionManager
                 ConsoleUI.PrintStepResult("Success");
 
                 ConsoleUI.PrintSuccess(zipFileName);
+                Logger.LogOperation(projectName, "Snapshot created", zipFileName);
             }
             catch (Exception ex)
             {
-                Logger.LogError("Failed to create snapshot", ex);
+                Logger.LogError($"Project '{projectName}' - Failed to create snapshot", ex);
                 ConsoleUI.PrintErrorArchiveFailed();
             }
         }

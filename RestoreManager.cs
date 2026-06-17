@@ -12,6 +12,7 @@ namespace VersionManager
             var versions = GetAvailableVersions(storagePath);
             if (versions.Count == 0)
             {
+                Logger.LogOperation(projectName, "Versions listed", "no versions found");
                 Console.WriteLine("No versions found.");
                 return;
             }
@@ -21,6 +22,8 @@ namespace VersionManager
             {
                 PrintVersionLine(entry);
             }
+
+            Logger.LogOperation(projectName, "Versions listed", $"{versions.Count} version(s)");
         }
 
         public static void RestoreVersion(string projectName)
@@ -32,6 +35,7 @@ namespace VersionManager
             string projectPath = ProjectManager.GetProjectPath(projectName);
             if (!ProjectManager.ProjectExists(projectName))
             {
+                Logger.LogOperation(projectName, "Restore failed", "project not found");
                 ConsoleUI.PrintErrorProjectMissing(projectName, ProjectManager.GetExpectedProjectLocations(projectName));
                 return;
             }
@@ -56,6 +60,7 @@ namespace VersionManager
 
             if (restorableVersions.Count == 0)
             {
+                Logger.LogOperation(projectName, "Restore failed", "no git-archived versions available");
                 Console.WriteLine("No git-archived versions available for restoration.");
                 return;
             }
@@ -69,6 +74,7 @@ namespace VersionManager
             string choice = ConsoleUI.PromptChooseVersion();
             if (!int.TryParse(choice, out int versionIndex) || !restorableVersions.ContainsKey(versionIndex))
             {
+                Logger.LogOperation(projectName, "Restore failed", "invalid version choice");
                 Console.WriteLine("Invalid version choice.");
                 return;
             }
@@ -92,10 +98,11 @@ namespace VersionManager
                 ConsoleUI.PrintStepResult("Success");
                 Console.WriteLine();
                 Console.WriteLine("Project restored.");
+                Logger.LogOperation(projectName, $"Version {versionIndex:D3} restored", selectedVersion.ArchivePath);
             }
             catch (Exception ex)
             {
-                Logger.LogError($"Failed to restore version {versionIndex} for project {projectName}", ex);
+                Logger.LogError($"Project '{projectName}' - Failed to restore version {versionIndex}", ex);
                 Console.WriteLine("Unable to restore project.");
             }
         }
